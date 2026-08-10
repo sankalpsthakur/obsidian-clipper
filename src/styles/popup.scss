@@ -103,6 +103,8 @@
 	height: 100%;
 	max-height: 100%;
 	overflow: hidden;
+	// Let middle sections shrink so the footer (Add / clip) stays visible (#921).
+	min-height: 0;
 
 	#note-name-field {
 		border: none;
@@ -115,6 +117,7 @@
 		min-height: 2rem;
 		max-height: 6rem;
 		overflow-y: auto;
+		flex-shrink: 0;
 		&:active,
 		&:focus {
 			box-shadow: none;
@@ -128,12 +131,19 @@
 		border-top: 1px solid var(--divider-color);
 		display: flex;
 		flex-grow: 1;
+		// Classic flex min-size: allow the content pane to shrink under long text
+		// so .clipper-footer is not pushed below the fixed popup height (#921).
+		min-height: 0;
+		overflow: hidden;
 		#note-content-field {
 			background-color: transparent;
 			border-radius: 0;
 			border: none;
 			padding: 10px var(--popup-padding);
 			resize: none;
+			min-height: 0;
+			width: 100%;
+			overflow-y: auto;
 			&:active,
 			&:focus {
 				box-shadow: none;
@@ -149,6 +159,8 @@
 		padding: 0.625rem;
 		border-top: 1px solid var(--divider-color);
 		background-color: var(--background-primary);
+		// Keep Add / path controls visible when note content or properties grow.
+		flex-shrink: 0;
 		button {
 			font-weight: var(--clipper-button-font-weight);
 			font-size: var(--clipper-button-font-size);
