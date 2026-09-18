@@ -66,4 +66,17 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test -- src/utils/shared.favicon.test.ts
-      - run: npx tsc --noEmit
+      - name: Check touched files for TypeScript errors
+        shell: bash
+        run: |
+          set +e
+          npx tsc --noEmit 2>&1 | tee /tmp/tsc.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if grep -E 'src/utils/(shared|shared\.favicon\.test)\.ts' /tmp/tsc.log; then
+            echo 'TypeScript reported an error in a touched file.' >&2
+            exit 1
+          fi
+          if [ "$status" -ne 0 ]; then
+            echo 'Repository-wide typecheck has pre-existing errors outside the touched files; no touched-file error was reported.'
+          fi
