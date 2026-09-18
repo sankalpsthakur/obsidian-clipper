@@ -33,6 +33,15 @@ export interface BuildVariablesParams {
 	extractedContent?: Record<string, string>;
 }
 
+function resolveUrl(value: string, baseUrl: string): string {
+	if (!value) return '';
+	try {
+		return new URL(value, baseUrl).href;
+	} catch {
+		return value;
+	}
+}
+
 /**
  * Build the template variable dictionary from extracted page data.
  * Pure function — no browser dependencies.
@@ -52,7 +61,7 @@ export function buildVariables(params: BuildVariablesParams): Record<string, str
 		'{{time}}': timestamp,
 		'{{description}}': (params.description || '').trim(),
 		'{{domain}}': getDomain(currentUrl),
-		'{{favicon}}': params.favicon || '',
+		'{{favicon}}': resolveUrl(params.favicon || '', currentUrl),
 		'{{fullHtml}}': (params.fullHtml || '').trim(),
 		'{{highlights}}': params.highlights || '',
 		'{{image}}': params.image || '',
