@@ -1,0 +1,69 @@
+name: Validate issue 847
+
+on:
+  push:
+    branches:
+      - validation/847-favicon-url
+
+jobs:
+  before:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 5315b3062c2b0832d5503f71a10264d5ca7b6aa9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Add regression test to unmodified base
+        run: |
+          cat > src/utils/shared.favicon.test.ts <<'EOF'
+          import { describe, expect, test } from 'vitest';
+          import { buildVariables, BuildVariablesParams } from './shared';
+
+          function makeParams(favicon: string, url = 'https://example.com/articles/page'): BuildVariablesParams {
+          	return {
+          		title: 'Test', author: '', content: '', contentHtml: '', url,
+          		fullHtml: '', description: '', favicon, image: '', published: '',
+          		site: '', language: 'en', wordCount: 0,
+          	};
+          }
+
+          describe('buildVariables favicon', () => {
+          	test('resolves root-relative favicon URLs against the page URL', () => {
+          		const vars = buildVariables(makeParams('/favicon.ico'));
+          		expect(vars['{{favicon}}']).toBe('https://example.com/favicon.ico');
+          	});
+          	test('resolves path-relative favicon URLs against the page URL', () => {
+          		const vars = buildVariables(makeParams('icons/favicon.png'));
+          		expect(vars['{{favicon}}']).toBe('https://example.com/articles/icons/favicon.png');
+          	});
+          });
+          EOF
+      - name: Confirm regression fails on base
+        shell: bash
+        run: |
+          set +e
+          npm test -- src/utils/shared.favicon.test.ts
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            echo 'Regression unexpectedly passes on the unmodified base.' >&2
+            exit 1
+          fi
+
+  after:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/847-favicon-url
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test -- src/utils/shared.favicon.test.ts
+      - run: npx tsc --noEmit
